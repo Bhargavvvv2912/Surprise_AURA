@@ -329,6 +329,7 @@ class DependencyAgent:
         print(f"--> Bootstrap Step 1: Installing dependencies from '{requirements_source.name}'...")
         req_path = str(requirements_source.resolve())
         
+        # Standard dependencies install
         pip_command_deps = [
             python_executable, "-m", "pip", "install", 
             "--no-build-isolation", 
@@ -342,9 +343,19 @@ class DependencyAgent:
 
         if self.config.get("IS_INSTALLABLE_PACKAGE", False):
             project_extras = self.config.get("PROJECT_EXTRAS", "")
-            print(f"\n--> Bootstrap Step 2: Installing project from current directory ('.') in editable mode...")
+            print(f"\n--> Bootstrap Step 2: Preparing Build Environment & Installing Project...")
+
+            # 🚀 THE FIX: Pre-install the entire [build-system] quartet.
+            # Without these, --no-build-isolation will fail because it can't find the 'compiler'.
+            build_reqs = ["numpy==1.26.4", "Cython>=3.0.10", "setuptools>=61.0.0", "wheel"]
+            run_command([python_executable, "-m", "pip", "install"] + build_reqs)
             
-            pip_command_project = [python_executable, "-m", "pip", "install", "--no-build-isolation", "-e", f".{project_extras}"]
+            # Now the editable install will succeed because its 'tools' are ready
+            pip_command_project = [
+                python_executable, "-m", "pip", "install", 
+                "--no-build-isolation", 
+                "-e", f".{project_extras}"
+            ]
             
             _, stderr_project, returncode_project = run_command(pip_command_project)
             if returncode_project != 0:
