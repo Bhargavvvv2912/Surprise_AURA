@@ -325,11 +325,26 @@ class DependencyAgent:
 
     def _run_bootstrap_and_validate(self, venv_dir, requirements_source):
         python_executable = str((venv_dir / "bin" / "python").resolve())
-        
-        print(f"--> Bootstrap Step 1: Installing dependencies from '{requirements_source.name}'...")
         req_path = str(requirements_source.resolve())
         
-        # Standard dependencies install
+        # 🚀 PHASE 0: FOUNDATION INJECTION
+        # We install build tools BEFORE touching the requirements file.
+        # This resolves the 'Bootstrap Paradox' where scikit-surprise needs 
+        # numpy/cython just to provide its own metadata.
+        print(f"--> Pre-Bootstrap: Injecting build-system foundation (NumPy/Cython)...")
+        foundation_tools = ["numpy==1.26.4", "setuptools", "wheel", "Cython>=3.0.0"]
+        
+        # We run this as a separate blocking command
+        _, stderr_foundation, returncode_foundation = run_command(
+            [python_executable, "-m", "pip", "install"] + foundation_tools
+        )
+        
+        if returncode_foundation != 0:
+            print(f"WARNING: Foundation injection failed: {stderr_foundation}")
+            # We continue anyway, as some repos might not need it, but usually this is a bad sign.
+
+        # 📦 PHASE 1: INSTALL DEPENDENCIES
+        print(f"--> Bootstrap Step 1: Installing dependencies from '{requirements_source.name}'...")
         pip_command_deps = [
             python_executable, "-m", "pip", "install", 
             "--no-build-isolation", 
@@ -341,16 +356,12 @@ class DependencyAgent:
         if returncode_deps != 0:
             return False, None, f"Failed to install dependencies: {stderr_deps}"
 
+        # 🏗️ PHASE 2: INSTALL LOCAL PROJECT (Optional)
         if self.config.get("IS_INSTALLABLE_PACKAGE", False):
             project_extras = self.config.get("PROJECT_EXTRAS", "")
-            print(f"\n--> Bootstrap Step 2: Preparing Build Environment & Installing Project...")
-
-            # 🚀 THE FIX: Pre-install the entire [build-system] quartet.
-            # Without these, --no-build-isolation will fail because it can't find the 'compiler'.
-            build_reqs = ["numpy==1.26.4", "Cython>=3.0.10", "setuptools>=61.0.0", "wheel"]
-            run_command([python_executable, "-m", "pip", "install"] + build_reqs)
+            print(f"\n--> Bootstrap Step 2: Installing project in editable mode...")
             
-            # Now the editable install will succeed because its 'tools' are ready
+            # We use --no-build-isolation here because we just hand-installed the foundation
             pip_command_project = [
                 python_executable, "-m", "pip", "install", 
                 "--no-build-isolation", 
@@ -361,13 +372,16 @@ class DependencyAgent:
             if returncode_project != 0:
                 return False, None, f"Failed to install project. Error: {stderr_project}"
         
+        # ✅ PHASE 3: VALIDATION
         print("\n--> Bootstrap Step 3: Running validation suite...")
         success, metrics, validation_output = validate_changes(python_executable, self.config)
         if not success:
             return False, None, validation_output
             
+        # 🧊 PHASE 4: LOCKFILE GENERATION
         installed_packages_output, _, _ = run_command([python_executable, "-m", "pip", "freeze"])
         final_packages = self._prune_pip_freeze(installed_packages_output)
+        
         return True, {"metrics": metrics, "packages": final_packages}, None
     
     def _try_install_and_validate(self, package_to_update, new_version, dynamic_constraints, baseline_reqs_path, is_probe):
