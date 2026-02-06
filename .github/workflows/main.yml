@@ -1,0 +1,66 @@
+name: AURA Experiment - Surprise (Repo 28)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  modernize-surprise:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: 🛠️ Setup Agent Deps
+        run: |
+          pip install --upgrade pip
+          pip install google-genai google-api-core pypi-simple packaging pip-tools
+
+      - name: 🧪 1. Run Pip Baseline
+        run: |
+          python -m venv baseline_env
+          ./baseline_env/bin/pip install -r requirements.txt
+          ./baseline_env/bin/pip install -e .
+          ./baseline_env/bin/python validation_surprise.py
+
+      - name: 💥 2. Run Pip Upgrade (Modernization Attack)
+        continue-on-error: true
+        run: |
+          python -m venv upgrade_env
+          ./upgrade_env/bin/pip install --upgrade pip
+          # This will pull NumPy 2.x, which crashes the current scikit-surprise build
+          ./upgrade_env/bin/pip install --upgrade -r primary_requirements.txt
+          ./upgrade_env/bin/pip install -e .
+          ./upgrade_env/bin/python validation_surprise.py
+
+      - name: 🤖 3. Run AURA Agent
+        run: |
+          # The agent creates its own isolated venvs to find the 'Heal'
+          python -u dependency_agent.py | tee aura_surprise_execution.log
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+
+      - name: 📝 Save Logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: aura-surprise-log
+          path: aura_surprise_execution.log
+
+      - name: 💾 Commit Final Results
+        if: always()
+        run: |
+          git config --global user.name 'AURA Agent'
+          git config --global user.email 'aura-agent@users.noreply.github.com'
+          git add requirements.txt aura_surprise_execution.log
+          if ! git diff --staged --quiet; then
+            git commit -m "🤖 [ASE-2026] Modernized Surprise: Resolved NumPy 2.x ABI Conflict [skip ci]"
+            git push
+          fi
