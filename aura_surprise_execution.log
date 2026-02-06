@@ -1,0 +1,230 @@
+
+::group::Analyzing Codebase for Update Risk
+Usage scores calculated.
+::endgroup::
+INFO: Found pinned requirements. Running initial health check and regenerating lockfile...
+
+::group::Initial Baseline Health Check
+--> Pre-Bootstrap: Injecting build-system foundation (NumPy/Cython)...
+--> Running command: '/home/runner/work/Surprise_AURA/Surprise_AURA/initial_check_venv/bin/python -m pip install numpy==1.26.4 setuptools wheel Cython>=3.0.0' in CWD: '.'
+--> Bootstrap Step 1: Installing dependencies from 'requirements.txt'...
+--> Running command: '/home/runner/work/Surprise_AURA/Surprise_AURA/initial_check_venv/bin/python -m pip install --no-build-isolation --no-cache-dir -r /home/runner/work/Surprise_AURA/Surprise_AURA/requirements.txt' in CWD: '.'
+
+--> Bootstrap Step 2: Installing project in editable mode...
+--> Running command: '/home/runner/work/Surprise_AURA/Surprise_AURA/initial_check_venv/bin/python -m pip install --no-build-isolation -e .' in CWD: '.'
+
+--> Bootstrap Step 3: Running validation suite...
+
+::group::Running Validation
+
+--- Running Smoke Test ---
+--> Running command: '/home/runner/work/Surprise_AURA/Surprise_AURA/initial_check_venv/bin/python /home/runner/work/Surprise_AURA/Surprise_AURA/validation_surprise.py' in CWD: '.'
+Smoke test PASSED.
+::endgroup::
+--> Running command: '/home/runner/work/Surprise_AURA/Surprise_AURA/initial_check_venv/bin/python -m pip freeze' in CWD: '.'
+Initial baseline is valid and stable. Overwriting requirements file with clean, frozen state.
+::endgroup::
+INFO: Dependency graph metrics not found. Entanglement scores will be 0.
+
+::group::UPDATE PASS 1/3
+
+Prioritized Update Plan for this Pass (Highest Risk First):
+Rank  | Package                        | % of Total Risk    | Change
+----- | ------------------------------ | ------------------ | --------------------
+1     | pandas                         | 40.00             % | 2.1.4 -> 3.0.0
+2     | numpy                          | 40.00             % | 1.26.4 -> 2.4.2
+3     | scipy                          | 20.00             % | 1.11.4 -> 1.17.0
+
+--------------------------------------------------------------------------------
+PULSE: [PASS 1 | ATTEMPT 1/3] Processing 'pandas'
+PULSE: Changed packages this pass so far: set()
+--------------------------------------------------------------------------------
+
+--> Toplevel Attempt: Trying direct update to pandas==3.0.0
+
+::group::Probe: Install & Validate for pandas==3.0.0
+--> Probe Step 1: Installing the proposed dependency set...
+--> Running command: '/home/runner/work/Surprise_AURA/Surprise_AURA/temp_venv/bin/python -m pip install --no-build-isolation --no-cache-dir -r /home/runner/work/Surprise_AURA/Surprise_AURA/temp_venv/probe_requirements.txt' in CWD: '.'
+::endgroup::
+
+--> Toplevel Result: Direct update FAILED. Reason: 'Dependency installation failed: The build process for `scikit-surprise` (being installed from `https://github.com/Bhargavvvv2912/Surprise_AURA`) failed because the `numpy` module was not found, which is a required dependency for its setup, occurring in the context of `joblib==1.4.2`.'
+    Suspected Blockers (Regex): ['joblib', 'string', 'module']
+--> Action: Entering Level 1 Healing with 'Filter-Then-Scan' strategy.
+
+::group::Healing 'pandas': Filter-Then-Scan Strategy
+
+--- Phase 1: Filtering for compatible versions ---
+  -> Checking compatibility of pandas==3.0.0...
+     -- Incompatible. Diagnosis: The dependency conflict stems from the build process for `scikit-surprise` (from commit `24ed3fda8349a53455df52602d96fce435a614d0`) failing to generate metadata because the required `numpy` module is not found.
+  -> Checking compatibility of pandas==2.3.3...
+     -- Incompatible. Diagnosis: The root cause of the dependency conflict is a `ModuleNotFoundError` for 'numpy', indicating that the package preparing its metadata in the `python3.11` environment cannot find its required 'numpy' module, observed while pip version `24.0` is in use and `26.0.1` is available.
+  -> Checking compatibility of pandas==2.3.2...
+     -- Incompatible. Diagnosis: The root cause of the dependency conflict is a `ModuleNotFoundError: No module named 'numpy'` occurring during the package's metadata generation (handled by setuptools), meaning `numpy` is a required but missing build dependency in the environment where `pip 24.0` is performing the installation.
+  -> Checking compatibility of pandas==2.3.1...
+     -- Incompatible. Diagnosis: The root cause of the dependency conflict is a `ModuleNotFoundError` for the `numpy` package, which is required by `setuptools` to generate metadata for the package being installed within the `pip 24.0` (upgradeable to `26.0.1`) environment.
+  -> Checking compatibility of pandas==2.3.0...
+     -- Incompatible. Diagnosis: The root cause of the dependency conflict is the `ModuleNotFoundError` for `numpy`, which prevents the package from preparing its metadata within the Python 3.11 environment, utilizing `pip 24.0` while `pip 26.0.1` is available.
+  -> Checking compatibility of pandas==2.2.3...
+     -- Incompatible. Diagnosis: The root cause of the dependency conflict is a `ModuleNotFoundError` for 'numpy' during package metadata generation, indicating that a required build dependency (numpy) is missing in the Python 3.11 environment while using pip version 24.0 (with 26.0.1 available).
+  -> Checking compatibility of pandas==2.2.2...
+     -- Incompatible. Diagnosis: The dependency conflict stems from the package's metadata generation process, handled by setuptools, requiring the `numpy` module, which is not found in the environment where `pip 24.0` is currently operating (with `pip 26.0.1` also noted as available).
+  -> Checking compatibility of pandas==2.2.1...
+     -- Incompatible. Diagnosis: The root cause of the dependency conflict is a `ModuleNotFoundError` for `numpy`, a critical package required by `setuptools` during metadata generation for a project in the `python3.11` environment, which occurred while `pip 24.0` was running (with `26.0.1` available), despite pip noting it's not the cause.
+  -> Checking compatibility of pandas==2.2.0...
+     -- Incompatible. Diagnosis: The dependency conflict arises because the editable package's metadata generation process, handled by `setuptools` under pip version 24.0 (with 26.0.1 available), failed with a `ModuleNotFoundError` for `numpy`, indicating `numpy` was a required build dependency but was not installed in the environment.
+
+--- Phase 2: Validating compatible versions (newest first) ---
+Result: No compatible versions were found. Reverting to last known good version.
+::endgroup::
+
+--> Action: Level 1 Healing failed for 'pandas'. Escalating to Level 2 'Iterative Greedy Expansion'.
+
+    -> [Greedy Expansion Iteration 1/5]
+       Current Conflict Cluster: {'string', 'module'}
+       Updatable Candidates: []
+       CRITICAL: Blockers identified, but they are already at max version.
+       Aborting to prevent regression. Co-Resolution impossible.
+  -> Result for pandas: Reverted/Kept at 2.1.4 (No Change).
+
+--------------------------------------------------------------------------------
+PULSE: [PASS 1 | ATTEMPT 2/3] Processing 'numpy'
+PULSE: Changed packages this pass so far: set()
+--------------------------------------------------------------------------------
+
+--> Toplevel Attempt: Trying direct update to numpy==2.4.2
+
+::group::Probe: Install & Validate for numpy==2.4.2
+--> Probe Step 1: Installing the proposed dependency set...
+--> Running command: '/home/runner/work/Surprise_AURA/Surprise_AURA/temp_venv/bin/python -m pip install --no-build-isolation --no-cache-dir -r /home/runner/work/Surprise_AURA/Surprise_AURA/temp_venv/probe_requirements.txt' in CWD: '.'
+::endgroup::
+
+--> Toplevel Result: Direct update FAILED. Reason: 'Dependency installation failed: The dependency conflict arises because `joblib==1.4.2` requires `numpy` to be available during its metadata generation, but `numpy` is not found in the environment at that critical stage.'
+    Suspected Blockers (Regex): ['joblib', 'string', 'module']
+--> Action: Entering Level 1 Healing with 'Filter-Then-Scan' strategy.
+
+::group::Healing 'numpy': Filter-Then-Scan Strategy
+
+--- Phase 1: Filtering for compatible versions ---
+  -> Checking compatibility of numpy==2.4.2...
+     -- Incompatible. Diagnosis: The dependency conflict stems from the `scikit-surprise` package (identified by commit `24ed3fda8349a53455df52602d96fce435a614d0`) being unable to prepare its metadata within the Python `3.11` environment because its required dependency, `numpy`, is missing, leading to a `ModuleNotFoundError`.
+  -> Checking compatibility of numpy==2.4.1...
+     -- Incompatible. Diagnosis: The root cause of the dependency conflict is a `ModuleNotFoundError: No module named 'numpy'`, as the package being installed critically requires `numpy` for its metadata generation, a problem unrelated to the noted `pip` versions 24.0 (current) and 26.0.1 (available).
+  -> Checking compatibility of numpy==2.4.0...
+     -- Incompatible. Diagnosis: The root cause of the dependency conflict is a `ModuleNotFoundError` for `numpy` during the package's metadata generation, as `numpy` is a required build dependency but is not installed in the environment, observed while using pip `24.0` (with `26.0.1` available).
+  -> Checking compatibility of numpy==2.3.5...
+     -- Incompatible. Diagnosis: The root cause of the dependency conflict is that the package being installed requires 'numpy' to generate its metadata, but 'numpy' is missing from the build environment, occurring while pip 24.0 is in use (with pip 26.0.1 available).
+  -> Checking compatibility of numpy==2.3.4...
+     -- Incompatible. Diagnosis: The root cause of the dependency conflict is a `ModuleNotFoundError` for `numpy`, which is required for metadata generation of the package being installed in the Python `3.11` environment, occurring while using `pip` version `24.0` (with `26.0.1` available).
+  -> Checking compatibility of numpy==2.3.3...
+     -- Incompatible. Diagnosis: The dependency conflict arises because the project's metadata generation, handled by `setuptools` through pip (current version `24.0`, with `26.0.1` available), fails due to a `ModuleNotFoundError: No module named 'numpy'`.
+  -> Checking compatibility of numpy==2.3.2...
+     -- Incompatible. Diagnosis: The root cause of the dependency conflict is a `ModuleNotFoundError` for `numpy`, which is required by `setuptools` to generate package metadata during an installation attempt managed by `pip 24.0` within a `python3.11` environment.
+  -> Checking compatibility of numpy==2.3.1...
+     -- Incompatible. Diagnosis: The root cause of the dependency conflict is that a package requires `numpy` for its metadata generation but `numpy` is not found in the environment, occurring while pip version `24.0` is installed and `26.0.1` is available for upgrade.
+  -> Checking compatibility of numpy==2.3.0...
+     -- Incompatible. Diagnosis: The root cause of the dependency conflict is the `ModuleNotFoundError` for `numpy`, indicating that the `numpy` module is a missing dependency required for a package to generate its metadata, as observed while pip 24.0 was installed with 26.0.1 noted as an available update.
+  -> Checking compatibility of numpy==2.2.6...
+     -- Incompatible. Diagnosis: The root cause of the dependency conflict is a `ModuleNotFoundError` for `numpy`, which prevents `setuptools` from generating metadata for the package being installed by `pip` version 24.0 because `numpy` is missing from the environment.
+  -> Checking compatibility of numpy==2.2.5...
+     -- Incompatible. Diagnosis: The dependency conflict arose because the package's metadata generation, run in a Python 3.11 environment with pip 24.0, encountered a `ModuleNotFoundError` for `numpy` as it was not present when required by the setup script.
+  -> Checking compatibility of numpy==2.2.4...
+     -- Incompatible. Diagnosis: The dependency conflict is rooted in a `ModuleNotFoundError` for `numpy`, as the package being installed requires `numpy` during its metadata generation process, which fails in an environment using pip version 24.0 (with 26.0.1 available).
+  -> Checking compatibility of numpy==2.2.3...
+     -- Incompatible. Diagnosis: The root cause of the dependency conflict is a `ModuleNotFoundError` for `numpy`, indicating that this essential build dependency is missing during metadata generation for a package within a `python3.11` environment managed by `pip 24.0`.
+  -> Checking compatibility of numpy==2.2.2...
+     -- Incompatible. Diagnosis: The root cause of the dependency conflict is a `ModuleNotFoundError` for 'numpy', which is missing and required by a package (e.g., Surprise_AURA) during its metadata generation, occurring while `pip` version `24.0` was running (with `26.0.1` available).
+  -> Checking compatibility of numpy==2.2.1...
+     -- Incompatible. Diagnosis: The dependency conflict originates from a `ModuleNotFoundError` for `numpy`, as the package being installed requires `numpy` to generate its metadata but it is not found in the environment, while `pip` is currently version `24.0` with `26.0.1` available.
+  -> Checking compatibility of numpy==2.2.0...
+     -- Incompatible. Diagnosis: The root cause of the dependency conflict is a `ModuleNotFoundError` for `numpy`, indicating the essential `numpy` package is missing during the preparation of editable metadata, though `pip` versions `24.0` and `26.0.1` are mentioned in a notice.
+  -> Checking compatibility of numpy==2.1.3...
+     -- Incompatible. Diagnosis: The root cause of the dependency conflict is a `ModuleNotFoundError` for `numpy`, which is required to prepare metadata for an editable package installation when using `pip 24.0` (with 26.0.1 available).
+  -> Checking compatibility of numpy==2.1.2...
+     -- Incompatible. Diagnosis: The dependency conflict stems from a `ModuleNotFoundError` for `numpy`, as the package being installed requires `numpy` to generate its metadata in the `python 3.11` environment, but it is not found, with `pip 24.0` currently installed and `26.0.1` available.
+  -> Checking compatibility of numpy==2.1.1...
+     -- Incompatible. Diagnosis: The root cause of the dependency conflict is a `ModuleNotFoundError` for `numpy` during the metadata generation of the package being installed within the `python3.11` environment, an issue encountered by `pip 24.0` (with `26.0.1` being the latest available version).
+  -> Checking compatibility of numpy==2.1.0...
+     -- Incompatible. Diagnosis: The root cause of the dependency conflict is a `ModuleNotFoundError: No module named 'numpy'` during metadata generation for a package, indicating a missing build-time dependency, even though `pip` itself is identified as version `24.0` with `26.0.1` available for upgrade.
+  -> Checking compatibility of numpy==2.0.2...
+     -- Incompatible. Diagnosis: The root cause of the dependency conflict is a `ModuleNotFoundError` for `numpy` during the metadata generation process, indicating that `numpy` is a required build-time dependency missing from the environment, while `pip` is running version `24.0` (with `26.0.1` available).
+  -> Checking compatibility of numpy==2.0.1...
+     -- Incompatible. Diagnosis: The root cause of the dependency issue is a `ModuleNotFoundError` for `numpy`, indicating that the `numpy` module was not found in the Python 3.11 environment during the metadata generation for an editable package, with pip versions 24.0 (current) and 26.0.1 (available) being present.
+  -> Checking compatibility of numpy==2.0.0...
+     -- Incompatible. Diagnosis: The root cause of the dependency conflict is that the metadata generation for an unspecified package, executed within a `python3.11` environment using `pip 24.0`, failed with a `ModuleNotFoundError` because it could not find the `numpy` module required during its build process.
+
+--- Phase 2: Validating compatible versions (newest first) ---
+Result: No compatible versions were found. Reverting to last known good version.
+::endgroup::
+
+--> Action: Level 1 Healing failed for 'numpy'. Escalating to Level 2 'Iterative Greedy Expansion'.
+
+    -> [Greedy Expansion Iteration 1/5]
+       Current Conflict Cluster: {'string', 'module'}
+       Updatable Candidates: []
+       CRITICAL: Blockers identified, but they are already at max version.
+       Aborting to prevent regression. Co-Resolution impossible.
+  -> Result for numpy: Reverted/Kept at 1.26.4 (No Change).
+
+--------------------------------------------------------------------------------
+PULSE: [PASS 1 | ATTEMPT 3/3] Processing 'scipy'
+PULSE: Changed packages this pass so far: set()
+--------------------------------------------------------------------------------
+
+--> Toplevel Attempt: Trying direct update to scipy==1.17.0
+
+::group::Probe: Install & Validate for scipy==1.17.0
+--> Probe Step 1: Installing the proposed dependency set...
+--> Running command: '/home/runner/work/Surprise_AURA/Surprise_AURA/temp_venv/bin/python -m pip install --no-build-isolation --no-cache-dir -r /home/runner/work/Surprise_AURA/Surprise_AURA/temp_venv/probe_requirements.txt' in CWD: '.'
+::endgroup::
+
+--> Toplevel Result: Direct update FAILED. Reason: 'Dependency installation failed: The dependency conflict is caused by a `ModuleNotFoundError` for `numpy` during the metadata preparation for `scikit-surprise`, which occurs in a context referencing `joblib==1.4.2`.'
+    Suspected Blockers (Regex): ['joblib', 'string', 'module']
+--> Action: Entering Level 1 Healing with 'Filter-Then-Scan' strategy.
+
+::group::Healing 'scipy': Filter-Then-Scan Strategy
+
+--- Phase 1: Filtering for compatible versions ---
+  -> Checking compatibility of scipy==1.17.0...
+     -- Incompatible. Diagnosis: The dependency conflict arises because the build process for `scikit-surprise` (from commit `24ed3fda8349a53455df52602d96fce435a614d0`) running under Python `3.11` requires the `numpy` module, which is not found in the environment.
+  -> Checking compatibility of scipy==1.16.3...
+     -- Incompatible. Diagnosis: The root cause of the dependency conflict is a `ModuleNotFoundError` for `numpy`, indicating that the package's metadata generation process for the editable package requires `numpy`, which is missing from the `python3.11` environment.
+  -> Checking compatibility of scipy==1.16.2...
+     -- Incompatible. Diagnosis: The root cause of the dependency issue is a `ModuleNotFoundError` for `numpy` during the package's metadata generation, preventing it from being built, with the log only mentioning pip versions `24.0` (current) and `26.0.1` (available).
+  -> Checking compatibility of scipy==1.16.1...
+     -- Incompatible. Diagnosis: The root cause of the dependency conflict is a `ModuleNotFoundError` for 'numpy' during metadata generation, indicating the package being installed requires 'numpy' but it is not present in the environment, independently of the `pip` version (currently 24.0, with 26.0.1 available).
+  -> Checking compatibility of scipy==1.16.0...
+     -- Incompatible. Diagnosis: The dependency conflict originates from a `ModuleNotFoundError` for `numpy` during the package's metadata generation, an issue distinct from the `pip` versions `24.0` and `26.0.1` noted in the log.
+  -> Checking compatibility of scipy==1.15.3...
+     -- Incompatible. Diagnosis: The root cause of the dependency conflict is a `ModuleNotFoundError` for 'numpy' during the package's metadata generation by `setuptools`, which prevents the build process, with `pip` versions `24.0` and `26.0.1` mentioned in a separate upgrade notice.
+  -> Checking compatibility of scipy==1.15.2...
+     -- Incompatible. Diagnosis: The root cause of the dependency conflict is a `ModuleNotFoundError` for 'numpy' during the metadata generation for an editable package, as `setuptools` requires `numpy` at build-time but it is unavailable in the environment (observed with pip `24.0` and with `26.0.1` suggested as an update).
+  -> Checking compatibility of scipy==1.15.1...
+     -- Incompatible. Diagnosis: The dependency conflict is rooted in a `ModuleNotFoundError` for `numpy`, indicating that an unspecified package requires `numpy` during its metadata generation process, but `numpy` is not installed in the Python 3.11 environment, while pip 24.0 is in use (with 26.0.1 available).
+  -> Checking compatibility of scipy==1.15.0...
+     -- Incompatible. Diagnosis: The root cause of the dependency conflict is a `ModuleNotFoundError` for `numpy`, indicating a missing build dependency required during package metadata generation, occurring within an environment where `pip` is at version `24.0` and an update to `26.0.1` is available.
+  -> Checking compatibility of scipy==1.14.1...
+     -- Incompatible. Diagnosis: The root cause of the dependency conflict is a `ModuleNotFoundError` for 'numpy', which is required by the package being installed in editable mode to generate its metadata, failing the installation attempted by pip 24.0 (with an available upgrade to 26.0.1).
+  -> Checking compatibility of scipy==1.14.0...
+     -- Incompatible. Diagnosis: The dependency conflict's root cause is that the package attempting to prepare editable metadata requires the `numpy` module for its build process, but `numpy` is not found in the environment, which is being handled by pip version `24.0` (with `26.0.1` available).
+  -> Checking compatibility of scipy==1.13.1...
+     -- Incompatible. Diagnosis: The root cause of the dependency conflict is that the package's metadata generation process critically depends on the 'numpy' module, which is missing from the environment, resulting in a `ModuleNotFoundError`, unrelated to the `pip` versions `24.0` (current) or `26.0.1` (available update).
+  -> Checking compatibility of scipy==1.13.0...
+     -- Incompatible. Diagnosis: The root cause of the dependency conflict is a `ModuleNotFoundError` for `numpy`, indicating it's a required dependency for the package's metadata generation but is not installed in the Python 3.11 environment, while pip version 24.0 is in use and 26.0.1 is available for upgrade.
+  -> Checking compatibility of scipy==1.12.0...
+     -- Incompatible. Diagnosis: The dependency conflict is caused by the installation process, managed by pip (currently version 24.0, with 26.0.1 available), failing because the required `numpy` module is not found in the Python 3.11 environment during package metadata generation.
+
+--- Phase 2: Validating compatible versions (newest first) ---
+Result: No compatible versions were found. Reverting to last known good version.
+::endgroup::
+
+--> Action: Level 1 Healing failed for 'scipy'. Escalating to Level 2 'Iterative Greedy Expansion'.
+
+    -> [Greedy Expansion Iteration 1/5]
+       Current Conflict Cluster: {'string', 'module'}
+       Updatable Candidates: []
+       CRITICAL: Blockers identified, but they are already at max version.
+       Aborting to prevent regression. Co-Resolution impossible.
+  -> Result for scipy: Reverted/Kept at 1.11.4 (No Change).
+::endgroup::
+
+No effective version changes were possible in this pass. The system has converged.
